@@ -31,6 +31,8 @@ def validText( text ):
 # Horrible init code
 ################################################
 
+print "Phabulous: v0.1"
+
 #command line args
 parser = argparse.ArgumentParser(description='Phabulous Command Line Interface')
 parser.add_argument('-r', '--reset', help='reset the phab credentials', action='store_true')
@@ -44,7 +46,7 @@ key_bindings_manager = KeyBindingManager()
 promptSettings = pickledb.load('prompt.db', False)
 
 #reset params?
-if None != args.reset:
+if None != args.reset and args.reset:
     promptSettings.rem("username")
     promptSettings.rem("url")
     promptSettings.rem("cert")
