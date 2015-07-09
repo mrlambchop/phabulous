@@ -170,7 +170,7 @@ def getPhabOption( prompt, dbKey, getFunc ):
         for i in range( 0, len(printValues)):
             print('  ' + str(i+1) + ':  ' + printValues[i])
 
-        print('  a: add ' + prompt + '    r: remove ' + prompt )
+        print('  a: add ' + prompt + '    r: remove ' + prompt  )
         text = get_input('select ' + prompt + '> ', key_bindings_registry=key_bindings_manager.registry)
 
         if len(text) and text.isdigit():
@@ -187,7 +187,7 @@ def getPhabOption( prompt, dbKey, getFunc ):
                 values.append( newValue )
                 store = True
         elif text == "r" or text == "remove":
-            oldValue = getText( "project to remove" )
+            oldValue = getText( prompt + " to remove" )
             if None != oldValue and len(oldValue) and oldValue.isdigit():
                 i = int( oldValue )
                 if i >= 1 and i <= (len(values) + 1):
@@ -231,13 +231,24 @@ def taskView( task ):
                 projectNamesStr += ", "
             projectNamesStr += p
 
+        ccUsers = []
+        for n in task['ccPHIDs']:
+            ccUsers.append( phab.getUserFromPHID( n ) )
+
+        #make CC names readable
+        ccNamesStr = ""
+        for i, p in enumerate(ccUsers):
+            if i != 0:
+                ccNamesStr += ", "
+            ccNamesStr += p
 
         print('  ' + task['objectName'])
         print('     Title:       ' + task['title'])
-        print('     Status  :    ' + colored(task['status'], 'cyan') )
+        print('     Status  :    ' + colored(task['status'], 'red') )
         print('     Priority:    ' + colored(task['priority'], 'green') )
         print('     User:        ' + colored(userName, 'blue') )
         print('     Assign:      ' + colored(assignedUser, 'blue') )
+        print('     CC:          ' + colored(ccNamesStr, 'blue') )
         print('     Projects:    ' + colored(projectNamesStr, 'cyan') )
         utc = float(task['dateCreated'].encode("utf8","ignore"))
         print('     Created:     ' + datetime.datetime.utcfromtimestamp( utc ).strftime('%A %d. %B %Y') )
@@ -260,13 +271,13 @@ def taskView( task ):
 
         print('     Description:' ),
         print( descPretty )
-        print('  1: status    2: comment   3: priority  4. add project   5. remove project')
+        print('  1: status    2: comment   3: priority  4. add project   5. remove project   6. cc user')
         text = get_input('select task> ', key_bindings_registry=key_bindings_manager.registry)
 
         if len(text) == 0:
             break
 
-        if text == "1":
+        if text == "1" or text == "s" or text == "status":
             newStatus = getNewStatus()
 
             if newStatus != None:
@@ -278,34 +289,42 @@ def taskView( task ):
             if len(newComment):
                 newTask = phab.updateTask( task['phid'], comment=newComment )
 
-        if text == "3":
+        if text == "3" or text == "p" or text == "priority":
             newPriority = getNewPriority()
 
             if newPriority != None:
                 newTask = phab.updateTask( task['phid'], priority=newPriority )
 
-        if text == "4":
+        if text == "4" or text == "a" or text == "add":
             newProject = getPhabOption( "project", "projects", getProject )
 
             if newProject != None:
                 projectNames.append( newProject )
                 newTask = phab.updateTask( task['phid'], projects=projectNames )
 
-        if text == "5":
+        if text == "5" or text == "r" or text == "remove":
             removeProject = getPhabOption( "project", "projects", getProject )
 
             if removeProject != None:
                 projectNames.remove( removeProject )
                 newTask = phab.updateTask( task['phid'], projects=projectNames )
 
+        if text == "6" or text == "u" or text == "user":
+            ccUser = getPhabOption( "add user", "friends", getUser )
+
+            if ccUser != None:
+                ccUsers.append( ccUser )
+                newTask = phab.updateTask( task['phid'], ccUsers=ccUsers )
+
         #if the task updated, refresh it now
         if newTask != None:
             task = newTask
 
 
+
 def createTaskView( projectName=None, userName=None ):
     if projectName == None:
-        projectName = getText("project name")
+        projectName = getPhabOption( "project", "projects", getProject )
         if None == projectName:
             return
 

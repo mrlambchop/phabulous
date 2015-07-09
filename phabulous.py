@@ -211,7 +211,7 @@ class Phabulous():
         return result
 
 
-    def updateTask( self, phid, status=None, comment=None, priority=None, projects=None ):
+    def updateTask( self, phid, status=None, comment=None, priority=None, projects=None, ccUsers=None ):
         params = {}
 
         params['phid'] = phid
@@ -224,6 +224,12 @@ class Phabulous():
 
         if priority != None:
             params['priority'] = priority
+
+        if ccUsers != None:
+            userPHID = []
+            for i in ccUsers:
+                userPHID.append( self.getUserPHID( i ) )
+            params['ccPHIDs'] = userPHID
 
         if projects != None:
             projectPHID = []
