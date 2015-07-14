@@ -10,6 +10,7 @@ import pickledb
 import argparse
 
 import phabulous
+from menu import *
 
 ################################################
 # Input helper funcs
@@ -36,6 +37,7 @@ print "Phabulous: v0.1"
 #command line args
 parser = argparse.ArgumentParser(description='Phabulous Command Line Interface')
 parser.add_argument('-r', '--reset', help='reset the phab credentials', action='store_true')
+parser.add_argument('-o', '--offline', help='run in offline mode', action='store_true')
 args = parser.parse_args()
 
 # We start with a `KeyBindingManager` instance, because this will already
@@ -44,6 +46,11 @@ key_bindings_manager = KeyBindingManager()
 
 #Prompt settings
 promptSettings = pickledb.load('prompt.db', False)
+
+#offline mode?
+offline = False
+if args.offline != None:
+    offline = args.offline
 
 #reset params?
 if None != args.reset and args.reset:
@@ -86,7 +93,7 @@ if None == promptSettings.get("group"):
     promptSettings.set( "group", [ ["Phab+Nick", "Phabulous", promptSettings.get("username") ] ] )
 
 #init phabulous!
-phab = phabulous.Phabulous( promptSettings.get("cert"), promptSettings.get("username"), promptSettings.get("url") )
+phab = phabulous.Phabulous( promptSettings.get("cert"), promptSettings.get("username"), promptSettings.get("url"), offline=offline )
 
 ################################################
 # Horrible init code
@@ -286,7 +293,7 @@ def taskView( task ):
         if text == "2" or text == "comment" or text == "c":
             newComment = getText( 'comment' )
 
-            if len(newComment):
+            if validText(newComment):
                 newTask = phab.updateTask( task['phid'], comment=newComment )
 
         if text == "3" or text == "p" or text == "priority":
@@ -463,40 +470,14 @@ def userView():
 
 
 def mainView():
-    # @key_bindings_manager.registry.add_binding('u',)
-    # def _(event):
-    #     event.cli.current_buffer.insert_text('z')
+    menu = Menu( "*** Commands ***", quit=True )
+    menu.add( "projects", "p", projectView )
+    menu.add( "users", "u", userView )
+    menu.add( "groups", "g", groupView )
+    menu.add( "refresh", "r", phab.refreshPHIDs )
+    menu.run()
 
-    # menu = Menu()
-    # menu.add( "project view", projectView )
-    # menu.add( "user view", userView )
-    # menu.add( "group view", groupView )
-    # menu.add( "refresh", None )
-    # menu.run()
-
-    # Read input.
-    while True:
-        print('*** Commands ***')
-        print('   1: projects    2: users     3: groups')
-        print('   4: refresh     5: quit')
-        text = get_input('What now> ', key_bindings_registry=key_bindings_manager.registry)
-
-        if text == "project" or text == "p" or text == "1":
-            projectView()
-
-        if text == "user" or text == "u" or text == "2":
-            userView()
-
-        if text == "group" or text == "g" or text == "3":
-            groupView()
-
-        if text == "refresh" or text == "r" or text == "4":
-            print "Refreshing all PHIDs.."
-            phab.refreshPHIDs()
-
-        if text == "quit" or text == "q" or text == "5":
-            break
-
+    #save settings on exit
     promptSettings.dump()
 
 if __name__ == '__main__':

@@ -8,13 +8,17 @@ import functools
 import locale
 
 class Phabulous():
-    def __init__( self, cert, username, url ):
+    def __init__( self, cert, username, url, offline=False ):
 
         self.cert = cert
         self.username = username
         self.phab_url = url
 
-        self.conduit = self._openConnection()
+        self.offline = offline
+
+        if self.offline  == False:
+            self.conduit = self._openConnection()
+
         self.phidCache = pickledb.load('phid.db', False)
 
         #first time init?
@@ -27,9 +31,9 @@ class Phabulous():
         token = int(time.time())
         signature = hashlib.sha1(str(token) + self.cert).hexdigest()
         connect_params = {
-            'client': 'Python demo',
-            'clientVersion': 0,
-            'clientDescription': 'A script for demonstrating conduit',
+            'client': 'Phabulous',
+            'clientVersion': 1,
+            'clientDescription': 'Phabulous by Automatic',
             'user': self.username,
             'host': self.phab_url,
             'authToken': token,
@@ -105,43 +109,46 @@ class Phabulous():
     def refreshPHIDs( self, subset=None ):
         params = {}
 
-        if subset == None:
-            users = True
-            projects = True
-            maniphest = True
-        elif subset == "users":
-            users = True
-        elif subset == "projects":
-            projects = True
-        elif subset == "maniphest":
-            maniphest = True
+        if self.offline  == False:
+            if subset == None:
+                users = True
+                projects = True
+                maniphest = True
+            elif subset == "users":
+                users = True
+            elif subset == "projects":
+                projects = True
+            elif subset == "maniphest":
+                maniphest = True
 
-        #read all the phils
-        if users:
-            params['limit'] = 500
-            results = self._doConduit( 'user.query', params )
-            if results != None:
-                for r in results:
-                    self.phidCache.set( r['phid'], r )
+            #read all the phils
+            if users:
+                params['limit'] = 500
+                results = self._doConduit( 'user.query', params )
+                if results != None:
+                    for r in results:
+                        self.phidCache.set( r['phid'], r )
 
-        #read all the projects?
-        if projects:
-            params['limit'] = 500
-            results = self._doConduit( 'project.query', params )
-            if results != None:
-                for r in results['data'].keys():
-                    self.phidCache.set( r, results['data'][r] )
+            #read all the projects?
+            if projects:
+                params['limit'] = 500
+                results = self._doConduit( 'project.query', params )
+                if results != None:
+                    for r in results['data'].keys():
+                        self.phidCache.set( r, results['data'][r] )
 
-        #read all the tasks
-        if maniphest:
-            params['limit'] = 10000
-            results = self._doConduit( 'maniphest.query', params )
-            if results != None:
-                for r in results.keys():
-                    self.phidCache.set( r, results[r] )
+            #read all the tasks
+            if maniphest:
+                params['limit'] = 10000
+                results = self._doConduit( 'maniphest.query', params )
+                if results != None:
+                    for r in results.keys():
+                        self.phidCache.set( r, results[r] )
 
-        #save!
-        self.phidCache.dump()
+            #save!
+            self.phidCache.dump()
+        else:
+            print "Can't refresh - offline mode"
 
 
     def getProjectTasks( self, projectName ):
