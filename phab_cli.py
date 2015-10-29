@@ -409,7 +409,7 @@ def taskListView( projectName=None, userName=None, optionalTaskListName=None ):
                     print len(displayedTasks) + 1, "  ", task['objectName'], "\t", task['title'], colored(task['priority'], 'green'), colored(ownerUserName, 'blue'), '/', colored(authorUserName, 'blue')
                     displayedTasks.append( task )
 
-        print('     f: filter (%s)   c: create    q: quit' % (promptSettings.get("taskFilter")) )
+        print('     f: filter (%s)   c: create    q: quit    o: open' % (promptSettings.get("taskFilter")) )
         text = get_input('select task> ', key_bindings_registry=key_bindings_manager.registry)
 
         if text == "q" or text == "quit":
@@ -417,6 +417,10 @@ def taskListView( projectName=None, userName=None, optionalTaskListName=None ):
 
         if text == "c" or text == "create":
             createTaskView( projectName=projectName, userName=userName )
+
+
+        if text == "o" or text == "open":
+            print "open"
 
         if text == "f" or text == "filter":
             newFilter = getText( 'filter' )
