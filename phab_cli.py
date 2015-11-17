@@ -8,6 +8,7 @@ from termcolor import colored
 import datetime
 import pickledb
 import argparse
+from subprocess import call
 
 import phabulous
 from menu import *
@@ -32,7 +33,7 @@ def validText( text ):
 # Horrible init code
 ################################################
 
-print "Phabulous: v0.1"
+print "Phabulous: v0.2"
 
 #command line args
 parser = argparse.ArgumentParser(description='Phabulous Command Line Interface')
@@ -278,7 +279,7 @@ def taskView( task ):
 
         print('     Description:' ),
         print( descPretty )
-        print('  1: status    2: comment   3: priority  4. add project   5. remove project   6. cc user')
+        print('  1: status    2: comment   3: priority  4. add project   5. remove project   6. cc user   7. open')
         text = get_input('select task> ', key_bindings_registry=key_bindings_manager.registry)
 
         if len(text) == 0:
@@ -322,6 +323,10 @@ def taskView( task ):
             if ccUser != None:
                 ccUsers.append( ccUser )
                 newTask = phab.updateTask( task['phid'], ccUsers=ccUsers )
+
+        if text == "7" or text == "o" or text == "open":
+            url = "https://phabricator.automatic.co/" + task['objectName']
+            call(["open", url])
 
         #if the task updated, refresh it now
         if newTask != None:
@@ -409,7 +414,7 @@ def taskListView( projectName=None, userName=None, optionalTaskListName=None ):
                     print len(displayedTasks) + 1, "  ", task['objectName'], "\t", task['title'], colored(task['priority'], 'green'), colored(ownerUserName, 'blue'), '/', colored(authorUserName, 'blue')
                     displayedTasks.append( task )
 
-        print('     f: filter (%s)   c: create    q: quit    o: open' % (promptSettings.get("taskFilter")) )
+        print('     f: filter (%s)   c: create    q: quit' % (promptSettings.get("taskFilter")) )
         text = get_input('select task> ', key_bindings_registry=key_bindings_manager.registry)
 
         if text == "q" or text == "quit":
